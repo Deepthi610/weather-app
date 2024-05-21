@@ -8,7 +8,7 @@ import { Alert, WeatherResponse } from './model';
 dotenv.config();
 
 // Create an Express application
-const app = express();
+export const app = express();
 
 // Define the port number from environment variables or default to 3000
 const PORT = process.env.PORT || 3000;
@@ -72,7 +72,7 @@ app.get('/get-weather', async (req: Request, res: Response) => {
         res.json(weatherRes);
     } catch (error) {
         // Send a 500 Internal Server Error response if there's an issue fetching the weather data
-        console.error('Error fetching weather data:', error);
+        // console.error('Error fetching weather data:', error);
         res.status(500).json({ error: 'Error fetching weather data' });
     }
 });

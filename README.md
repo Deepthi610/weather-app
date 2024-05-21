@@ -10,7 +10,7 @@ This Weather App is a simple Node.js application that fetches weather data based
 
 ## Prerequisites
 
-- Node.js (v22 or later)
+- Node.js (v20 or later)
 - npm (v10 or later)
 - An API key from [OpenWeather](https://openweathermap.org/api)
 
