@@ -1,10 +1,10 @@
 export interface WeatherResponse {
     weatherCondition: string;
     temperatureCategory: string;
-    alerts: string;
+    alerts: Alert[];
 }
 
-interface Alert {
+export interface Alert {
     event: string,
     description: string;
 }
