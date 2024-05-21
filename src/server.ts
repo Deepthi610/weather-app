@@ -29,6 +29,11 @@ app.get('/get-weather', async (req: Request, res: Response) => {
     // Get the OpenWeather API key from environment variables
     // This must be generated in the open weather account
     const apiKey = process.env.OPENWEATHER_API_KEY;
+    // Validate API key presence
+    if (!apiKey) {
+        return res.status(500).json({ error: 'OpenWeather API key is not configured' });
+    }
+
     console.log(apiKey);
     // Construct the URL for the OpenWeather API request
     // const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
@@ -48,12 +53,10 @@ app.get('/get-weather', async (req: Request, res: Response) => {
         };
         // console.log("Test data in response: ",data);
         // Extract the current weather condition and temperature
-        
         weatherRes.weatherCondition = data.current.weather[0].main;
-        const temperature = +data.current.temp;
+        const temperature = parseFloat(data.current.temp);
 
         // Categorize the temperature as cold, moderate, or hot
-        //let tempCategory: string = 'moderate';
         if (temperature < parseFloat(MAX_COLD)) {
             weatherRes.temperatureCategory = 'cold';
         } else if (temperature > parseFloat(MIN_HEAT)) {
@@ -61,9 +64,7 @@ app.get('/get-weather', async (req: Request, res: Response) => {
         }
 
         // Extract any weather alerts, if present
-        // let alerts: string = 'No alerts';
         if (data.alerts && data.alerts.length > 0) {
-            // weatherRes.alerts = data.alerts.map((alert: any) => alert.description).join(', ');
             weatherRes.alerts = data.alerts.map((alert: Alert) => ({description: alert.description, event: alert.event}));
         }
 
@@ -71,9 +72,15 @@ app.get('/get-weather', async (req: Request, res: Response) => {
         // Send a JSON response with the weather condition, temperature category, and alerts
         res.json(weatherRes);
     } catch (error) {
-        // Send a 500 Internal Server Error response if there's an issue fetching the weather data
-        // console.error('Error fetching weather data:', error);
-        res.status(500).json({ error: 'Error fetching weather data' });
+        // Handle specific error cases
+        if (axios.isAxiosError(error)) {
+            const status = error.response?.status || 500;
+            const message = error.response?.data || 'Error fetching weather data';
+            res.status(status).json({ error: message });
+        } else {
+            // Generic error handler
+            res.status(500).json({ error: 'An unexpected error occurred' });
+        }
     }
 });
 
