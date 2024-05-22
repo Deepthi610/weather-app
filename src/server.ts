@@ -15,10 +15,12 @@ const PORT = process.env.PORT || 3000;
 const MAX_COLD = process.env.MAX_COLD || "15";
 const MIN_HEAT = process.env.MIN_HEAT || "25";
 
+
 // Define a GET API endpoint for getting weather information
 app.get('/get-weather', async (req: Request, res: Response) => {
     // Extract latitude and longitude from the query parameters
     const { lat, lon } = req.query;
+
 
     // Validation - Check if latitude and longitude are present in the query parameters
     if (!lat || !lon) {
@@ -37,7 +39,7 @@ app.get('/get-weather', async (req: Request, res: Response) => {
     console.log(apiKey);
     // Construct the URL for the OpenWeather API request
     // const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-    const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+    const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&exclude=hourly,minutely,daily`;
     console.log(url);
     try {
         // Make an HTTP GET request to the OpenWeather API
@@ -48,19 +50,25 @@ app.get('/get-weather', async (req: Request, res: Response) => {
         // Declare the response object with default values.
         let weatherRes: WeatherResponse = {
             weatherCondition : '',
-            temperatureCategory: 'moderate',
+            temperatureCategory: '',
             alerts: []
         };
         // console.log("Test data in response: ",data);
         // Extract the current weather condition and temperature
-        weatherRes.weatherCondition = data.current.weather[0].main;
-        const temperature = parseFloat(data.current.temp);
+        if(data.current) {
+            weatherRes.weatherCondition = data.current.weather[0].main;
+            const temperature = parseFloat(data.current.temp);
 
-        // Categorize the temperature as cold, moderate, or hot
-        if (temperature < parseFloat(MAX_COLD)) {
-            weatherRes.temperatureCategory = 'cold';
-        } else if (temperature > parseFloat(MIN_HEAT)) {
-            weatherRes.temperatureCategory = 'hot';
+            // Categorize the temperature as cold, moderate, or hot
+            weatherRes.temperatureCategory = 'moderate';
+            if (temperature < parseFloat(MAX_COLD)) {
+                weatherRes.temperatureCategory = 'cold';
+            } else if (temperature > parseFloat(MIN_HEAT)) {
+                weatherRes.temperatureCategory = 'hot';
+            }
+        }
+        else {
+            throw new Error("Missing current information");
         }
 
         // Extract any weather alerts, if present
@@ -68,10 +76,11 @@ app.get('/get-weather', async (req: Request, res: Response) => {
             weatherRes.alerts = data.alerts.map((alert: Alert) => ({description: alert.description, event: alert.event}));
         }
 
-        
+
         // Send a JSON response with the weather condition, temperature category, and alerts
         res.json(weatherRes);
     } catch (error) {
+        console.error("Error Message", error);
         // Handle specific error cases
         if (axios.isAxiosError(error)) {
             const status = error.response?.status || 500;
@@ -79,7 +88,7 @@ app.get('/get-weather', async (req: Request, res: Response) => {
             res.status(status).json({ error: message });
         } else {
             // Generic error handler
-            res.status(500).json({ error: 'An unexpected error occurred' });
+            res.status(500).json({ error: "Failed to get weather data" });
         }
     }
 });
